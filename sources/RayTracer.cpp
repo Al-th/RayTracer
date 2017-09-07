@@ -36,15 +36,18 @@ void RayTracer::createWorldObjects(){
     std::cout << "Defining Scene" << std::endl;
     Material m;
 
-    Vec3<double> center(0,0,0);
-    double radius = 3.0;
-    Sphere* s = new Sphere(m, center, radius);
+    for(int i = 0; i < 5; i++){
+        for(int j = 0; j < 5; j++){
+            Vec3<double> center(i-2.5,(j-2.5)/3.0,j-2.5);
+            double radius = 0.5;
+            Sphere* s = new Sphere(m, center, radius);
+            objectList.push_back(s);
+        }
+    }
 
     Vec3<double> center2(0,-5,0);
     double radius2 = 1;
     Sphere* s2 = new Sphere(m, center2, radius2);
-
-    objectList.push_back(s);
     objectList.push_back(s2);
 }
 
@@ -55,13 +58,10 @@ void RayTracer::createWorldLigths(){
 }
 
 void RayTracer::animate(double t){
-    Sphere* s = (Sphere*)objectList[1];
+    Sphere* s = (Sphere*)objectList.back();
     double frequencySphereMotion = 0.3;
     s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-5,3*sin(2*PI*frequencySphereMotion*t));
 
-    Light* l = lightList[0];
-    double frequencyLightMotion = 0.1;
-    l->position = Vec3<double>(0, -25+25*cos(2*PI*frequencyLightMotion*t),0);
 }
 
 
@@ -69,7 +69,7 @@ void RayTracer::convertScreenPixelToPosition(int i, int j, double* x, double* y,
     if(i < screenWidthInPixels && j < screenHeightInPixels ){
         *x = leftOffsetInMeters + i * screenWidthMeterToPixelRatio;
         *y = topOffsetInMeters + j * screenHeightMeterToPixelRatio;
-        *z = 10;
+        *z = 5;
     }
 }
 
@@ -98,7 +98,7 @@ void RayTracer::computeFrame(){
 }
 
 double RayTracer::getRayIntensity(Ray ray, int depth){
-    if(depth > 6){
+    if(depth > 2){
         return 0;
     }
 
