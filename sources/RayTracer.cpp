@@ -56,8 +56,12 @@ void RayTracer::createWorldLigths(){
 
 void RayTracer::animate(double t){
     Sphere* s = (Sphere*)objectList[1];
-    double frequency = 0.3;
-    s->center = Vec3<double>(3*cos(2*PI*frequency*t),-5,3*sin(2*PI*frequency*t));
+    double frequencySphereMotion = 0.3;
+    s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-5,3*sin(2*PI*frequencySphereMotion*t));
+
+    Light* l = lightList[0];
+    double frequencyLightMotion = 0.1;
+    l->position = Vec3<double>(0, -25+25*cos(2*PI*frequencyLightMotion*t),0);
 }
 
 
