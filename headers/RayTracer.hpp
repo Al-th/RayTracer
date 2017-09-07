@@ -8,6 +8,7 @@
 #include "Sphere.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
+#include "Light.hpp"
 
 using namespace std;
 
@@ -18,6 +19,7 @@ class RayTracer{
 
         void computeFrame();
         void drawFrame(SDL_Surface*);
+        void animate(double);
     private:
         //Pixel definition
         int screenWidthInPixels;
@@ -31,6 +33,7 @@ class RayTracer{
         double topOffsetInMeters;
         double leftOffsetInMeters;
         std::vector<Primitive*> objectList;
+        std::vector<Light*> lightList;
 
         
         //Translation between screen and real world
@@ -38,7 +41,10 @@ class RayTracer{
         double screenHeightMeterToPixelRatio;
 
         void convertScreenPixelToPosition(int , int , double*, double*, double*);
-        double getRayIntensity(Ray);
+        double getRayIntensity(Ray, int);
+
+        void createWorldObjects();
+        void createWorldLigths();
 };
 
 #endif

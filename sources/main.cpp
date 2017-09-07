@@ -5,6 +5,9 @@
 
 //#include "SDL_draw.h"
 #include <cmath>
+#include <ctime>
+#include <iostream>
+#include <cstdio>
 
 #include "RayTracer.hpp" 
 
@@ -38,6 +41,7 @@ int processEvents(int* mouseX, int* mouseY){
             // exit if the window is closed
         case SDL_QUIT:
             std::cout << "EVENT_QUIT" << std::endl;
+            result = 1;
             break;
 
             // check for keypresses
@@ -59,6 +63,10 @@ int main ( int argc, char** argv )
     /**********************/
 
     srand(time(NULL));
+    clock_t startingClock;
+
+    startingClock = clock();
+
     bool done = false;
     int mouseX = 0;
     int mouseY = 0;
@@ -68,7 +76,7 @@ int main ( int argc, char** argv )
     }
 
     // create a new window
-    SDL_Surface* screen = SDL_SetVideoMode(500, 500, 16, SDL_HWSURFACE|SDL_DOUBLEBUF);
+    SDL_Surface* screen = SDL_SetVideoMode(500, 500, 24, SDL_HWSURFACE|SDL_DOUBLEBUF);
     if ( !screen )
     {
         std::cout << "Unable to set 500x500 video: " << SDL_GetError() << std::endl;
@@ -91,6 +99,10 @@ int main ( int argc, char** argv )
             default:
                 break;
         }
+
+        double t = (clock() - startingClock)/(double)CLOCKS_PER_SEC;
+        rt->animate(t);
+
         // clear screen
         SDL_FillRect(screen, 0, SDL_MapRGB(screen->format, 0, 0, 0));
 
@@ -99,8 +111,11 @@ int main ( int argc, char** argv )
 
         SDL_Flip(screen);
 
+    
+
 
     } // end main loop
+    delete rt;
 
     printf("Exited cleanly\n");
     return 0;

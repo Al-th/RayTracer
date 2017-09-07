@@ -1,6 +1,8 @@
 #include "Sphere.hpp"
 
-Sphere::Sphere(Material m, Vec3<double> sphereCenter, double sphereRadius) : Primitive(m), center(sphereCenter), radius(sphereRadius){
+Sphere::Sphere(Material m, Vec3<double> center, double radius) : Primitive(m){
+    this->center = center;
+    this->radius = radius;
     this->radiusSquared = radius*radius;
 }
 
@@ -33,7 +35,7 @@ void Sphere::testCollision(Ray ray, Vec3<double>* hitPosition, Vec3<double>* hit
         t = tca + sqrt(thcSquared);
     }
 
-    if(abs(t) < 1e-5){
+    if(abs(t) < 1e-10){
         return;
     }
 
@@ -45,9 +47,11 @@ void Sphere::testCollision(Ray ray, Vec3<double>* hitPosition, Vec3<double>* hit
     hitPosition->z = hitPos.z;
 
     Vec3<double> hitNorm = hitPos - this->center;
+    hitNorm.normalize();
     hitNormal->x = hitNorm.x;
     hitNormal->y = hitNorm.y;
     hitNormal->z = hitNorm.z;
+    
 
     return;
 }

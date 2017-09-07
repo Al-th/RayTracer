@@ -30,8 +30,8 @@ $(programName) : $(objects)
 	g++ $(OPT) $(CPPFLAGS) -o $(programName) $(objects) $(LDFLAGS) $(SDL_config)	
 
 clean :
-	rm -rf $(objectFolder)/*.o
 	rm -f RayTracer
+	rm -rf $(objectFolder)/*.o
 
 report :
 	@echo "--------------Reporting -------------"

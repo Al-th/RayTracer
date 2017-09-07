@@ -18,19 +18,46 @@ RayTracer::RayTracer(SDL_Surface* SDLscreen) : screen(SDLscreen){
     this->screenHeightMeterToPixelRatio = screenHeightInMeters/screenHeightInPixels;
 
 
-    //Temporary world object declaration
-    Material m;
-    Vec3<double> center(0.1,0,0);
-    double radius = 1.0;
-    std::cout << "Defining new sphere" << std::endl;
-    Sphere* s = new Sphere(m, center, radius);
-    std::cout << "Sphere created" << std::endl;
-    objectList.push_back(s);
+
+    createWorldObjects();
+    createWorldLigths();
 
 }
 
 
 RayTracer::~RayTracer(){
+    for(int i = 0; i < this->screenWidthInPixels; i++){
+        delete [] image[i];
+    }
+    delete [] image;
+}
+
+void RayTracer::createWorldObjects(){
+    std::cout << "Defining Scene" << std::endl;
+    Material m;
+
+    Vec3<double> center(0,0,0);
+    double radius = 3.0;
+    Sphere* s = new Sphere(m, center, radius);
+
+    Vec3<double> center2(0,-5,0);
+    double radius2 = 1;
+    Sphere* s2 = new Sphere(m, center2, radius2);
+
+    objectList.push_back(s);
+    objectList.push_back(s2);
+}
+
+void RayTracer::createWorldLigths(){
+    Vec3<double> lightPosition(0,-50,0);
+    Light* l = new Light(lightPosition);
+    lightList.push_back(l);
+}
+
+void RayTracer::animate(double t){
+    Sphere* s = (Sphere*)objectList[1];
+    double frequency = 0.3;
+    s->center = Vec3<double>(3*cos(2*PI*frequency*t),-5,3*sin(2*PI*frequency*t));
 }
 
 
@@ -58,65 +85,104 @@ void RayTracer::computeFrame(){
             Vec3<double> k2 = k1;
 
 
-            Ray* screenRay = new Ray(rayOrigin, rayDirection);
-            double rayIntensity = getRayIntensity(*screenRay);
+            Ray screenRay(rayOrigin, rayDirection);
+            double rayIntensity = getRayIntensity(screenRay,0);
             image[i][j] = rayIntensity;
+
         }
     }
 }
 
-double RayTracer::getRayIntensity(Ray ray){
+double RayTracer::getRayIntensity(Ray ray, int depth){
+    if(depth >2){
+        return 0;
+    }
+
     double dist = INFINITY;
-    Vec3<double>* finalHitPosition = NULL;
-    Vec3<double>* finalHitNormal = NULL;
+    Vec3<double> finalHitPosition;
+    Vec3<double> finalHitNormal;
 
     double rayIntensity = 0;
 
 
-    Vec3<double>* hitPosition = new Vec3<double>(0,0,0);
-    Vec3<double>* hitNormal = new Vec3<double>(0,0,0);
-    bool hit = false;
+
+    bool hasAtLeastOneHit = false;
     //Detect closest collision;
     for(int i = 0; i < objectList.size(); i++){
+
+        bool hit = false;
+        Vec3<double> hitPosition;
+        Vec3<double> hitNormal;
+
         Primitive* primitive = objectList[i];
         hit = false;
-        primitive->testCollision(ray, hitPosition, hitNormal, hit);
+        primitive->testCollision(ray, &hitPosition, &hitNormal, hit);
 
         if(hit == true){
-            double hitDistance = (*hitPosition - ray.origin).length();
+            hasAtLeastOneHit = true;
+            double hitDistance = (hitPosition - ray.origin).length();
             if (hitDistance < dist){
                 dist = hitDistance;
-
                 finalHitPosition = hitPosition;
                 finalHitNormal = hitNormal;
             }
         }
     }
 
-    if(finalHitPosition != NULL){
-        rayIntensity = 255.0;
+    if(hasAtLeastOneHit){
+        //Spawn shadow rays
+        for(int i = 0; i < lightList.size(); i++){
+            Light* light = lightList[i];
+            Vec3<double> shadowRayOrigin(finalHitPosition - 1e-3*(finalHitPosition - ray.origin) );
+            Vec3<double> shadowRayDirection(light->position - finalHitPosition);
+            Ray shadowRay(shadowRayOrigin, shadowRayDirection);
+            bool shadowRayBlocked = false;
+            for(int i = 0; i < objectList.size(); i++){
+                bool hit = false;
+                Vec3<double> hitPosition;
+                Vec3<double> hitNormal;
+        
+                Primitive* primitive = objectList[i];
+                hit = false;
+                primitive->testCollision(shadowRay, &hitPosition, &hitNormal, hit);
+        
+                if(hit == true){
+                    shadowRayBlocked |= true;
+                    break;
+                }
+            }
+            if(!shadowRayBlocked){
+                rayIntensity = 255.0 * abs(shadowRay.direction.dotProduct(finalHitNormal));
+            }
+        }
+
+        //Spawn Perfect Reflection rays
+        Vec3<double> reflectionRayOrigin = finalHitPosition;
+        Vec3<double> reflectioNRayDirection = ray.direction - 2*(ray.direction.dotProduct(finalHitNormal))*finalHitNormal;
+        Ray reflectionRay(reflectionRayOrigin, reflectioNRayDirection);
+        getRayIntensity(reflectionRay, depth+1);
+        //Spawn Perfect Transmission ray
+        //Spawn Diffuse Reflection Rays
+        //Spawn Diffuse Transmission Rays
+
     }
 
-    //Spawn shadow rays
-    //Spawn Perfect Reflection rays
-    //Spawn Perfect Transmission ray
-    //Spawn Diffuse Reflection Rays
-    //Spawn Diffuse Transmission Rays
 
+    
     return rayIntensity;
 }
 
 void RayTracer::drawFrame(SDL_Surface* screen){
-    for(int i = 0; i < screenWidthInPixels; i++){
-        for(int j = 0; j < screenHeightInPixels; j++){
-            /* Get a pointer to the video surface's pixels in memory. */
-            Uint32 *pixels = (Uint32*) screen->pixels;
-
-            /* Calculate offset to the location we wish to write to */
-            int offset = screen->w * i + j;
-
-            /* Compose RGBA values into correct format for video surface and copy to screen */
-            *(pixels + offset) = SDL_MapRGBA(screen->format, image[i][j], image[i][j], image[i][j], 255);    
+    SDL_LockSurface(screen);
+    std::vector<uint8_t> pixels(screenHeightInPixels * screen->pitch,0); 
+    int pitch = screen->pitch;
+    for(int y = 0; y < screenHeightInPixels; y++){
+        for(int x = 0; x < screenWidthInPixels; x ++){
+            pixels[(x*3) + (y*pitch)+0] = image[x][y];
+            pixels[(x*3) + (y*pitch)+1] = image[x][y];
+            pixels[(x*3) + (y*pitch)+2] = image[x][y];
         }
     }
+    memcpy(screen->pixels, pixels.data(), screen->pitch * screen->h);
+    SDL_UnlockSurface(screen);
 }
