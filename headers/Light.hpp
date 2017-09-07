@@ -6,10 +6,11 @@ using namespace std;
 
 class Light{
     public:
-        Light(Vec3<double>);
+        Light(Vec3<double>, double);
         ~Light();
 
         Vec3<double> position;
+        double intensity;
 };
 
 #endif

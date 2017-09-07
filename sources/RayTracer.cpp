@@ -50,7 +50,7 @@ void RayTracer::createWorldObjects(){
 
 void RayTracer::createWorldLigths(){
     Vec3<double> lightPosition(0,-50,0);
-    Light* l = new Light(lightPosition);
+    Light* l = new Light(lightPosition,0.8);
     lightList.push_back(l);
 }
 
@@ -94,7 +94,7 @@ void RayTracer::computeFrame(){
 }
 
 double RayTracer::getRayIntensity(Ray ray, int depth){
-    if(depth >2){
+    if(depth > 6){
         return 0;
     }
 
@@ -152,7 +152,7 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
                 }
             }
             if(!shadowRayBlocked){
-                rayIntensity = 255.0 * abs(shadowRay.direction.dotProduct(finalHitNormal));
+                rayIntensity += (255*light->intensity) * abs(shadowRay.direction.dotProduct(finalHitNormal));
             }
         }
 
@@ -160,7 +160,7 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
         Vec3<double> reflectionRayOrigin = finalHitPosition;
         Vec3<double> reflectioNRayDirection = ray.direction - 2*(ray.direction.dotProduct(finalHitNormal))*finalHitNormal;
         Ray reflectionRay(reflectionRayOrigin, reflectioNRayDirection);
-        getRayIntensity(reflectionRay, depth+1);
+        rayIntensity += getRayIntensity(reflectionRay, depth+1);
         //Spawn Perfect Transmission ray
         //Spawn Diffuse Reflection Rays
         //Spawn Diffuse Transmission Rays
