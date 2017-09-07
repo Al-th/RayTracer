@@ -76,7 +76,7 @@ int main ( int argc, char** argv )
     }
 
     // create a new window
-    SDL_Surface* screen = SDL_SetVideoMode(1000, 1000, 24, SDL_HWSURFACE|SDL_DOUBLEBUF);
+    SDL_Surface* screen = SDL_SetVideoMode(500, 500, 24, SDL_HWSURFACE|SDL_DOUBLEBUF);
     if ( !screen )
     {
         std::cout << "Unable to set 500x500 video: " << SDL_GetError() << std::endl;
@@ -111,6 +111,11 @@ int main ( int argc, char** argv )
 
         SDL_Flip(screen);
 
+        
+        /* Activate to save a bitmap of the output result
+        SDL_SaveBMP(screen, "./test.bmp");
+        break;
+        */
     
 
 

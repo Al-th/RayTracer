@@ -39,7 +39,7 @@ void RayTracer::createWorldObjects(){
     for(int i = 0; i < 5; i++){
         for(int j = 0; j < 5; j++){
             Vec3<double> center(i-2.5,(j-2.5)/3.0,j-2.5);
-            double radius = 0.5;
+            double radius = 0.45;
             Sphere* s = new Sphere(m, center, radius);
             objectList.push_back(s);
         }
@@ -53,7 +53,7 @@ void RayTracer::createWorldObjects(){
 
 void RayTracer::createWorldLigths(){
     Vec3<double> lightPosition(0,-50,0);
-    Light* l = new Light(lightPosition,0.8);
+    Light* l = new Light(lightPosition,1);
     lightList.push_back(l);
 }
 
@@ -69,7 +69,7 @@ void RayTracer::convertScreenPixelToPosition(int i, int j, double* x, double* y,
     if(i < screenWidthInPixels && j < screenHeightInPixels ){
         *x = leftOffsetInMeters + i * screenWidthMeterToPixelRatio;
         *y = topOffsetInMeters + j * screenHeightMeterToPixelRatio;
-        *z = 5;
+        *z = 4;
     }
 }
 
@@ -137,7 +137,7 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
         //Spawn shadow rays
         for(int i = 0; i < lightList.size(); i++){
             Light* light = lightList[i];
-            Vec3<double> shadowRayOrigin(finalHitPosition - 1e-3*(finalHitPosition - ray.origin) );
+            Vec3<double> shadowRayOrigin(finalHitPosition - 1e-5*(finalHitPosition - ray.origin) );
             Vec3<double> shadowRayDirection(light->position - finalHitPosition);
             Ray shadowRay(shadowRayOrigin, shadowRayDirection);
             bool shadowRayBlocked = false;
