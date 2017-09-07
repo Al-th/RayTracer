@@ -112,7 +112,7 @@ int main ( int argc, char** argv )
         SDL_Flip(screen);
 
         
-        /* Activate to save a bitmap of the output result
+        /*// Activate to save a bitmap of the output result
         SDL_SaveBMP(screen, "./test.bmp");
         break;
         */
