@@ -19,6 +19,21 @@ int Primitive::getPrimitiveType(){
     return type;
 }
 
+
+//Reflection part
 double Primitive::getReflectionRatio(){
     return m.getReflectionRatio();
+}
+
+//Refraction part
+bool Primitive::isTransparent(){
+    return m.isTransparent();
+}
+
+double Primitive::getRefractionRatio(){
+    return m.getRefractionRatio();
+}
+
+double Primitive::getRefractionIndex(){
+    return m.getRefractionIndex();
 }

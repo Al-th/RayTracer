@@ -35,25 +35,38 @@ RayTracer::~RayTracer(){
 void RayTracer::createWorldObjects(){
     std::cout << "Defining Scene" << std::endl;
     Material m;
-    m.setReflectionRatio(0.6);
+    m.setReflectionRatio(0);
+    m.setTransparentProperty(1.5,1);
+    
+    Material m2;
+    m2.setReflectionRatio(0);
+    m2.setTransparentProperty(0,0);
 
-    Vec3<double> center2(0,-5,0);
+
+    Vec3<double> center2(0,-2,0);
     double radius2 = 1;
     Sphere* s2 = new Sphere(m, center2, radius2);
     objectList.push_back(s2);
 
+    Vec3<double> c3(0,-1,0);
+    double r3 = 1.0;
+    Sphere* s3 = new Sphere(m2, c3, r3);
+    objectList.push_back(s3);
+
+
+
     for(int i = 0; i < 10; i+=2){
         for(int j = 0; j < 10; j+=2){
-            Vec3<double> center(i-5,(j-5)/3.0,j-5);
-            double radius = 1;
-            Sphere* s = new Sphere(m, center, radius);
+            Vec3<double> center(i-4,(j)/3.0,j-5);
+            double radius = 0.8;
+            Sphere* s = new Sphere(m2, center, radius);
             objectList.push_back(s);
         }
     }
 
-    Material m2;
+
+    
     //LeftPlane
-    m2.setReflectionRatio(0);
     Vec3<double> lplanePoint(-10,0,0);
     Vec3<double> lplaneNormal(1,0,0);
     Plane* lPlane = new Plane(m2, lplanePoint, lplaneNormal);
@@ -90,8 +103,7 @@ void RayTracer::createWorldLigths(){
 void RayTracer::animate(double t){
     Sphere* s = (Sphere*)objectList.front();
     double frequencySphereMotion = 0.03;
-    s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-4,3*sin(2*PI*frequencySphereMotion*t));
-
+    s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-1.2,3*sin(2*PI*frequencySphereMotion*t));
 }
 
 
@@ -129,7 +141,7 @@ void RayTracer::computeFrame(){
 }
 
 double RayTracer::getRayIntensity(Ray ray, int depth){
-    if(depth > 1){
+    if(depth > 2){
         return 0;
     }
 
@@ -196,12 +208,25 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
 
         //Spawn Perfect Reflection rays
         if(finalHitPrimitive->getReflectionRatio() > 0){
-            Vec3<double> reflectionRayOrigin = finalHitPosition;
+            Vec3<double> reflectionRayOrigin = finalHitPosition - 1e-5*(finalHitPosition - ray.origin) ;
             Vec3<double> reflectioNRayDirection = ray.direction - 2*(ray.direction.dotProduct(finalHitNormal))*finalHitNormal;
             Ray reflectionRay(reflectionRayOrigin, reflectioNRayDirection);
             rayIntensity += finalHitPrimitive->getReflectionRatio() * getRayIntensity(reflectionRay, depth+1);
         }
         //Spawn Perfect Transmission ray
+        if(finalHitPrimitive->isTransparent()){
+            Vec3<double> refractionRayOrigin = finalHitPosition + 1e-5*(finalHitPosition - ray.origin);
+            
+            double eta = 1.0/finalHitPrimitive->getRefractionIndex();
+            double c1 = finalHitNormal.dotProduct(ray.direction);
+            double c2 = eta*eta*(1-(c1*c1));
+            if(c2<=1){
+                double c3 = eta*c1-sqrt(1 - c2);
+                Vec3<double> refractionRayDirection = eta * ray.direction +  c3 * finalHitNormal;
+                Ray refractionRay(refractionRayOrigin, refractionRayDirection);
+                rayIntensity += finalHitPrimitive->getRefractionRatio() * getRayIntensity(refractionRay, depth+1);
+           }
+        }
         //Spawn Diffuse Reflection Rays
         //Spawn Diffuse Transmission Rays
 

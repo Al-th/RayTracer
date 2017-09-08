@@ -17,10 +17,17 @@ class Material
         void setReflectionRatio(double);
         //Diffuse Reflection
         //Specular Transmission
+        void setTransparentProperty(double refractionIndex, double refractionRatio);
+        double getRefractionIndex();
+        double getRefractionRatio();
+        bool isTransparent();
         //Diffuse Transmission
     protected:
     private:
         double reflectionRatio;
+
+        double refractionRatio;
+        double refractionIndex;
 };
 
 #endif // MATERIAL_H

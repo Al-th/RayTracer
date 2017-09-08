@@ -15,6 +15,10 @@ class Primitive
         int getPrimitiveType();
         double getReflectionRatio();
 
+        double getRefractionRatio();
+        double getRefractionIndex();
+        bool isTransparent();
+
         Material m;
     protected:
     private:
