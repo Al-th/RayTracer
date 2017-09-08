@@ -43,26 +43,26 @@ void RayTracer::createWorldObjects(){
     m2.setTransparentProperty(0,0);
 
 
-    Vec3<double> center2(0,-2,0);
+    /*Vec3<double> center2(0,-2,0);
     double radius2 = 1;
     Sphere* s2 = new Sphere(m, center2, radius2);
-    objectList.push_back(s2);
+    objectList.push_back(s2);*/
 
-    Vec3<double> c3(0,-1,0);
+    Vec3<double> c3(0,-0.5,0);
     double r3 = 1.0;
     Sphere* s3 = new Sphere(m2, c3, r3);
     objectList.push_back(s3);
 
 
 
-    for(int i = 0; i < 10; i+=2){
+    /*for(int i = 0; i < 10; i+=2){
         for(int j = 0; j < 10; j+=2){
             Vec3<double> center(i-4,(j)/3.0,j-5);
             double radius = 0.8;
             Sphere* s = new Sphere(m2, center, radius);
             objectList.push_back(s);
         }
-    }
+    }*/
 
 
     
@@ -96,14 +96,23 @@ void RayTracer::createWorldObjects(){
 
 void RayTracer::createWorldLigths(){
     Vec3<double> lightPosition(0,-10,0);
-    Light* l = new Light(lightPosition,1);
+    Light* l = new Light(lightPosition,2);
     lightList.push_back(l);
+
+    Vec3<double> lightPos2(0,1,2);
+    Light* l2 = new Light(lightPos2,1);
+    lightList.push_back(l2);
 }
 
 void RayTracer::animate(double t){
-    Sphere* s = (Sphere*)objectList.front();
-    double frequencySphereMotion = 0.03;
+  /*  Sphere* s = (Sphere*)objectList.front();
+    double frequencySphereMotion = 0.01;
     s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-1.2,3*sin(2*PI*frequencySphereMotion*t));
+*/
+
+    Light* l = (Light*)lightList.front();
+    double frequencyLightMotion = 0.03;
+    l->position = Vec3<double>(5*cos(2*PI*frequencyLightMotion*t),-10,6);
 }
 
 
@@ -116,6 +125,7 @@ void RayTracer::convertScreenPixelToPosition(int i, int j, double* x, double* y,
 }
 
 void RayTracer::computeFrame(){
+    maxIntensityInScene = 0;
     #pragma omp parallel for collapse(2)
     for(int i = 0; i < screenWidthInPixels; i++){
         for(int j = 0; j < screenHeightInPixels; j++){
@@ -135,7 +145,9 @@ void RayTracer::computeFrame(){
             Ray screenRay(rayOrigin, rayDirection);
             double rayIntensity = getRayIntensity(screenRay,0);
             image[i][j] = rayIntensity;
-
+            if(rayIntensity>maxIntensityInScene){
+                maxIntensityInScene = rayIntensity;
+            }
         }
     }
 }
@@ -202,7 +214,13 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
                 }
             }
             if(!shadowRayBlocked){
-                rayIntensity += (255*light->intensity) * abs(shadowRay.direction.dotProduct(finalHitNormal));
+                //Diffuse lighting
+                rayIntensity += light->intensity  * abs(shadowRay.direction.dotProduct(finalHitNormal));
+                //Specular lighting
+                Vec3<double> bisector = shadowRay.direction - ray.direction;
+                bisector.normalize();
+                double specularCoefficient = pow(max(0.0,bisector.dotProduct(finalHitNormal)),20);
+                rayIntensity += light->intensity * 0.8 * specularCoefficient ;
             }
         }
 
@@ -228,6 +246,7 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
            }
         }
         //Spawn Diffuse Reflection Rays
+
         //Spawn Diffuse Transmission Rays
 
     }
@@ -243,9 +262,9 @@ void RayTracer::drawFrame(SDL_Surface* screen){
     int pitch = screen->pitch;
     for(int y = 0; y < screenHeightInPixels; y++){
         for(int x = 0; x < screenWidthInPixels; x ++){
-            pixels[(x*3) + (y*pitch)+0] = image[x][y];
-            pixels[(x*3) + (y*pitch)+1] = image[x][y];
-            pixels[(x*3) + (y*pitch)+2] = image[x][y];
+            pixels[(x*3) + (y*pitch)+0] = 255*(image[x][y]/maxIntensityInScene);
+            pixels[(x*3) + (y*pitch)+1] = 255*(image[x][y]/maxIntensityInScene);
+            pixels[(x*3) + (y*pitch)+2] = 255*(image[x][y]/maxIntensityInScene);
         }
     }
     memcpy(screen->pixels, pixels.data(), screen->pitch * screen->h);

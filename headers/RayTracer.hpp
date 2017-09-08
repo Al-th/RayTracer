@@ -27,6 +27,7 @@ class RayTracer{
         int screenHeightInPixels;
         SDL_Surface* screen;
         double** image;
+        double maxIntensityInScene;
         
         //Real word definition
         double screenWidthInMeters;
@@ -46,6 +47,7 @@ class RayTracer{
 
         void createWorldObjects();
         void createWorldLigths();
+
 };
 
 #endif
