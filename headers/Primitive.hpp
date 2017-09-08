@@ -8,14 +8,17 @@
 class Primitive
 {
     public:
-        Primitive(Material m);
+        Primitive(Material, int);
         ~Primitive();
 
         virtual void testCollision(Ray, Vec3<double>*, Vec3<double>*, bool&);
+        int getPrimitiveType();
+        double getReflectionRatio();
 
         Material m;
     protected:
     private:
+        int type;
 };
 
 #endif // PRIMITIVE_H

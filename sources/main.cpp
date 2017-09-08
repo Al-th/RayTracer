@@ -89,6 +89,7 @@ int main ( int argc, char** argv )
 
 
     RayTracer* rt = new RayTracer(screen);
+    int iteration = 0;
     while (!done)
     {
         int event = processEvents(&mouseX, &mouseY);
@@ -112,10 +113,11 @@ int main ( int argc, char** argv )
         SDL_Flip(screen);
 
         
-        /*// Activate to save a bitmap of the output result
-        SDL_SaveBMP(screen, "./test.bmp");
-        break;
-        */
+        // Activate to save a bitmap of the output result
+        /*string s = "./output/test" + to_string(iteration) + ".bmp";
+        SDL_SaveBMP(screen, s.c_str());
+        iteration++;*/
+        
     
 
 

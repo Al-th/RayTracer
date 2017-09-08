@@ -11,3 +11,12 @@ Material::~Material()
 {
     //dtor
 }
+
+
+void Material::setReflectionRatio(double reflectionRatio){
+    this->reflectionRatio = std::max(std::min(reflectionRatio,1.0),0.0);
+}
+
+double Material::getReflectionRatio(){
+    return reflectionRatio;
+}

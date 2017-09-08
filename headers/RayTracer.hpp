@@ -6,6 +6,7 @@
 #include <SDL/SDL.h>
 #include "Primitive.hpp"
 #include "Sphere.hpp"
+#include "Plane.hpp"
 #include "Material.hpp"
 #include "Ray.hpp"
 #include "Light.hpp"

@@ -1,6 +1,6 @@
 #include "Sphere.hpp"
 
-Sphere::Sphere(Material m, Vec3<double> center, double radius) : Primitive(m){
+Sphere::Sphere(Material m, Vec3<double> center, double radius) : Primitive(m,0){
     this->center = center;
     this->radius = radius;
     this->radiusSquared = radius*radius;

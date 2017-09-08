@@ -11,7 +11,7 @@ incDir := /home/athis/Documents/Work/Code/C++/versioning_philips/MathUtils/ $(so
 libDir := /usr/local/lib
 lib := SDL_draw pthread
 SDL_config := `sdl-config --libs`
-OPT := -ggdb -std=c++11 -O0
+OPT := -ggdb -std=c++11 -O0 -fopenmp
 
 CPPFLAGS += $(foreach includedir,$(incDir),-I$(includedir))
 LDFLAGS += $(foreach librarydir,$(libDir),-L$(librarydir))
@@ -49,5 +49,6 @@ report :
 	@echo "Libraries" $(lib)
 	@echo "CPPFLAGS : " $(CPPFLAGS)
 	@echo "LDFLAGS : " $(LDFLAGS)
+	@echo "OPT : " $(OPT)
 	@echo "--------------Reporting -------------"
 	@echo ""

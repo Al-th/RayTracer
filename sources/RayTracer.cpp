@@ -35,32 +35,62 @@ RayTracer::~RayTracer(){
 void RayTracer::createWorldObjects(){
     std::cout << "Defining Scene" << std::endl;
     Material m;
-
-    for(int i = 0; i < 5; i++){
-        for(int j = 0; j < 5; j++){
-            Vec3<double> center(i-2.5,(j-2.5)/3.0,j-2.5);
-            double radius = 0.45;
-            Sphere* s = new Sphere(m, center, radius);
-            objectList.push_back(s);
-        }
-    }
+    m.setReflectionRatio(0.6);
 
     Vec3<double> center2(0,-5,0);
     double radius2 = 1;
     Sphere* s2 = new Sphere(m, center2, radius2);
     objectList.push_back(s2);
+
+    for(int i = 0; i < 10; i+=2){
+        for(int j = 0; j < 10; j+=2){
+            Vec3<double> center(i-5,(j-5)/3.0,j-5);
+            double radius = 1;
+            Sphere* s = new Sphere(m, center, radius);
+            objectList.push_back(s);
+        }
+    }
+
+    Material m2;
+    //LeftPlane
+    m2.setReflectionRatio(0);
+    Vec3<double> lplanePoint(-10,0,0);
+    Vec3<double> lplaneNormal(1,0,0);
+    Plane* lPlane = new Plane(m2, lplanePoint, lplaneNormal);
+    objectList.push_back(lPlane);
+    //RightPlane
+    Vec3<double> rplanePoint(10,0,0);
+    Vec3<double> rplaneNormal(-1,0,0);
+    Plane* rPlane = new Plane(m2, rplanePoint, rplaneNormal);
+    objectList.push_back(rPlane);
+    //TopPlane
+    Vec3<double> tplanePoint(0,-15,0);
+    Vec3<double> tplaneNormal(0,-1,0);
+    Plane* tPlane = new Plane(m2, tplanePoint, tplaneNormal);
+    objectList.push_back(tPlane);
+    //BottomPlane
+    Vec3<double> bplanePoint(0,5,0);
+    Vec3<double> bplaneNormal(0,1,0);
+    Plane* bPlane = new Plane(m2, bplanePoint, bplaneNormal);
+    objectList.push_back(bPlane);
+    //BackPlane
+    Vec3<double> bbplanePoint(0,0,-10);
+    Vec3<double> bbplaneNormal(0,0,1);
+    Plane* backPlane = new Plane(m2, bbplanePoint, bbplaneNormal);
+    objectList.push_back(backPlane);
+    
 }
 
 void RayTracer::createWorldLigths(){
-    Vec3<double> lightPosition(0,-50,0);
+    Vec3<double> lightPosition(0,-10,0);
     Light* l = new Light(lightPosition,1);
     lightList.push_back(l);
 }
 
 void RayTracer::animate(double t){
-    Sphere* s = (Sphere*)objectList.back();
-    double frequencySphereMotion = 0.3;
-    s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-5,3*sin(2*PI*frequencySphereMotion*t));
+    Sphere* s = (Sphere*)objectList.front();
+    double frequencySphereMotion = 0.03;
+    s->center = Vec3<double>(3*cos(2*PI*frequencySphereMotion*t),-4,3*sin(2*PI*frequencySphereMotion*t));
 
 }
 
@@ -69,11 +99,12 @@ void RayTracer::convertScreenPixelToPosition(int i, int j, double* x, double* y,
     if(i < screenWidthInPixels && j < screenHeightInPixels ){
         *x = leftOffsetInMeters + i * screenWidthMeterToPixelRatio;
         *y = topOffsetInMeters + j * screenHeightMeterToPixelRatio;
-        *z = 4;
+        *z = 8;
     }
 }
 
 void RayTracer::computeFrame(){
+    #pragma omp parallel for collapse(2)
     for(int i = 0; i < screenWidthInPixels; i++){
         for(int j = 0; j < screenHeightInPixels; j++){
             double x = 0;
@@ -98,13 +129,14 @@ void RayTracer::computeFrame(){
 }
 
 double RayTracer::getRayIntensity(Ray ray, int depth){
-    if(depth > 2){
+    if(depth > 1){
         return 0;
     }
 
     double dist = INFINITY;
     Vec3<double> finalHitPosition;
     Vec3<double> finalHitNormal;
+    Primitive* finalHitPrimitive;
 
     double rayIntensity = 0;
 
@@ -129,10 +161,11 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
                 dist = hitDistance;
                 finalHitPosition = hitPosition;
                 finalHitNormal = hitNormal;
+                finalHitPrimitive = primitive;
             }
         }
     }
-
+    
     if(hasAtLeastOneHit){
         //Spawn shadow rays
         for(int i = 0; i < lightList.size(); i++){
@@ -140,6 +173,7 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
             Vec3<double> shadowRayOrigin(finalHitPosition - 1e-5*(finalHitPosition - ray.origin) );
             Vec3<double> shadowRayDirection(light->position - finalHitPosition);
             Ray shadowRay(shadowRayOrigin, shadowRayDirection);
+            double distanceToLightSquared = (light->position - shadowRay.origin).lengthSq();
             bool shadowRayBlocked = false;
             for(int i = 0; i < objectList.size(); i++){
                 bool hit = false;
@@ -149,8 +183,8 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
                 Primitive* primitive = objectList[i];
                 hit = false;
                 primitive->testCollision(shadowRay, &hitPosition, &hitNormal, hit);
-        
-                if(hit == true){
+                double hitDistanceSquared =(hitPosition - shadowRay.origin).lengthSq();
+                if(hit == true && hitDistanceSquared < distanceToLightSquared){
                     shadowRayBlocked |= true;
                     break;
                 }
@@ -161,10 +195,12 @@ double RayTracer::getRayIntensity(Ray ray, int depth){
         }
 
         //Spawn Perfect Reflection rays
-        Vec3<double> reflectionRayOrigin = finalHitPosition;
-        Vec3<double> reflectioNRayDirection = ray.direction - 2*(ray.direction.dotProduct(finalHitNormal))*finalHitNormal;
-        Ray reflectionRay(reflectionRayOrigin, reflectioNRayDirection);
-        rayIntensity += getRayIntensity(reflectionRay, depth+1);
+        if(finalHitPrimitive->getReflectionRatio() > 0){
+            Vec3<double> reflectionRayOrigin = finalHitPosition;
+            Vec3<double> reflectioNRayDirection = ray.direction - 2*(ray.direction.dotProduct(finalHitNormal))*finalHitNormal;
+            Ray reflectionRay(reflectionRayOrigin, reflectioNRayDirection);
+            rayIntensity += finalHitPrimitive->getReflectionRatio() * getRayIntensity(reflectionRay, depth+1);
+        }
         //Spawn Perfect Transmission ray
         //Spawn Diffuse Reflection Rays
         //Spawn Diffuse Transmission Rays
